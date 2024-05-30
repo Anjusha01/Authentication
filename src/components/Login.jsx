@@ -4,11 +4,13 @@ import { Container, Form, Button, Col } from 'react-bootstrap';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
     const [isLogin, setIsLogin] = useState(true);
     const [data, setData] = useState({});
     const [error, setError] = useState(null);
+    let navigate=useNavigate()
 
     const toggleForm = () => {
         setIsLogin(!isLogin);
@@ -25,10 +27,12 @@ function Login() {
         try {
             let response = await axios.post('http://localhost:4000/login', data);
             console.log(response);
+            localStorage.setItem('token',response.data.token)
+            navigate('/books')
             toast.success('Login successful'); // Display login success message
         } catch (e) {
             setError(e.response.data);
-            toast.error(e.response.data); // Display error message
+            toast.error(e.response.data);// Display error message
         }
     };
 
