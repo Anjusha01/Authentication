@@ -3,6 +3,8 @@ import mongoose from 'mongoose'
 import cors from 'cors'
 import User from './schema/user.js'
 import bcrypt from 'bcrypt'
+import Book from './schema/books.js'
+import jwt from 'jsonwebtoken'
 
 const app=express()
 
@@ -13,6 +15,20 @@ const db=mongoose.connection
 
 app.use(express.json())
 app.use(cors())
+
+let verifyToken=(req,res,next)=>{
+    try{
+        console.log(req.headers.authorization)
+        let response=jwt.verify(req.headers.authorization,'abc')
+        console.log(response)
+        next()
+    }
+    catch(e){
+        res.status(401).json(e.message)
+        console.log(e.message,'error');
+    }
+}
+
 app.get('/',(req,res)=>{
     res.json({name:'Anju'})
 })
@@ -64,12 +80,36 @@ app.post('/register',async (req,res)=>{
             if(!matchPassword){
                 return res.status(401).json('invalid email or password')
             }
-            res.json(response)
+            let token = jwt.sign({id:response._id,email:response.email},'abc')
+            console.log(token,'token generated');
+            res.json({response,token})
         }
         catch(e){
             res.status(500).json(e.message)
         }
     })
+
+    //CRED operations for book collection
+
+    app.post('/add',async(req,res)=>{
+        console.log(req.body)
+        let newBook=new Book(req.body)
+        let response= await newBook.save()
+        res.json(response)
+    })
+    app.get('/view',verifyToken,async(req,res)=>{
+        let books= await Book.find()
+        console.log(books)
+        res.json(books)
+
+    })
+
+    app.delete('/delete/:id',async(req,res)=>{
+        let id=req.params.id
+        let response=await Book.findByIdAndDelete(id)
+        res.json(response)
+    })
+
     app.listen(4000,()=>{
         console.log('Running on 4000')
 })
